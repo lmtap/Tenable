@@ -1,0 +1,46 @@
+# Este script en PowerShell nos muestra las vulnerabilidades críticas vistas en los últimos 30 días que exista un exploit asociado
+
+$accessKey = 'ACCESS_KEY_HERE'
+$secretKey = 'SECRET_KEY_HERE'
+#$headers = @{'x-apikey'=@{'accesskey'=$accessKey;'secretkey'=$secretKey}}
+$headers = @{}
+$headers.Add("x-apikey", "accessKey=$accessKey;secretKey=$secretKey")
+
+
+# Filters applied:
+# 	Last observed: within the last 30 days
+# 	Severity:Critical
+#	ExploitAvailible:Yes
+#	Activos DMZ correspondiente al valor 1
+$filters = @(
+
+    @{"filterName"="lastSeen"; "operator"="="; "value"="0:30"},
+    @{"filterName"="severity"; "operator"="="; "value"="4"}
+    @{"filterName"="exploitAvailable"; "operator"="="; "value"="true"}	
+    @{"filterName"="asset"; "operator"="="; "value"="1"}	
+)
+
+
+$query = @{"tool"="vulndetails";
+            "createdTime"=0;
+            "modifiedTime"=0;
+            "name"="";
+            "description"="";
+            "type"="vuln";
+            "sortDir"="desc";
+            "context"="";
+            "startOffset"=0;
+            "endOffset"=99999;
+            "sortField"="severity";
+            "filters"=$filters
+}
+
+$body = @{"sourceType"="cumulative";"type"="vuln";"query"=$query} | ConvertTo-Json -Compress -Depth 5
+
+
+#Tenable.sc URL
+$scURL = 'https://192.168.12.11'
+
+#Get results from query
+$result = Invoke-RestMethod -Uri $scURL/rest/analysis -Method Post -Headers $headers -Body $body -UseBasicParsing 
+$queryResult = $result.response
